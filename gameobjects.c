@@ -41,6 +41,7 @@ void handle_input(uint8_t *row)
 void draw_player(uint8_t row)
 {
 	// clear both rows first
+	// without this we leave a "ghost" of the previous render
 	lcd_set_cursor(0, 1);
 	lcd_display(" ");
 	lcd_set_cursor(1, 1);
