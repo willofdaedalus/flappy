@@ -7,10 +7,11 @@
 #define FB_TOP_BLK (1)
 #define FB_BOT_BLK (2)
 
-#define FB_PLAYER ("@")
-#define FB_PIPE ("#")
-#define FB_BOMB ("*")
-#define FB_INV ("&")
+#define FB_PLAYER (0x40) // @
+#define FB_PIPE (0x23)	 // #
+#define FB_BOMB (0x2a)	 // *
+#define FB_INV (0x26)	 // &
+#define FB_BLANK (0x20)	 // SPACE
 
 #define LCD_COLS (16)
 

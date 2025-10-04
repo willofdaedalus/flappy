@@ -62,8 +62,8 @@ int main(void)
 	i2c_init();
 	lcd_init();
 
-	lcd_set_cursor(player_row, 1);
-	lcd_display("@");
+	// lcd_set_cursor(player_row, 1);
+	// lcd_display("@");
 
 
 	sei();

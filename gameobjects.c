@@ -3,8 +3,13 @@
 #include <avr/interrupt.h>
 #include <avr/io.h>
 
+#define MAX_OBJ_COUNT (2)
+
 volatile uint8_t btn_state;
 volatile uint8_t btn_event;
+// static uint8_t prev_obj;
+// track the number of objs per obj that has been spawned
+// static uint8_t tops, bottoms, blanks;
 
 ISR(TIMER0_COMPA_vect)
 {
@@ -83,20 +88,29 @@ void draw_frame(uint8_t *framebuf)
 		case FB_TOP_BLK:
 			// clear_cell(x);
 			lcd_set_cursor(0, x);
-			lcd_display(FB_PIPE);
+			lcd_send_data(FB_PIPE);
 			break;
 
 		case FB_NO_BLK:
 			// clear_cell(x);
 			lcd_set_cursor(0, x);
-			lcd_display(" ");
+			lcd_send_data(FB_BLANK);
 			break;
 
 		case FB_BOT_BLK:
 			// clear_cell(x);
 			lcd_set_cursor(1, x);
-			lcd_display(FB_PIPE);
+			lcd_send_data(FB_PIPE);
 			break;
 		}
 	}
 }
+
+// uint8_t gen_obj(void)
+// {
+// 	uint8_t cur_obj;
+//
+// 	if (prev_obj != FB_BLANK)
+//
+// 		return 0;
+// }
