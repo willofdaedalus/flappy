@@ -12,7 +12,23 @@
 // 2 - block on the bottom
 // 3 - destroy blocks powerup
 // 4 - invincibility powerup
-// static uint8_t framebuf[LCD_COLS];
+static uint8_t framebuf[LCD_COLS] = {FB_TOP_BLK,
+									 FB_NO_BLK,
+									 FB_NO_BLK,
+									 FB_BOT_BLK,
+									 FB_NO_BLK,
+									 FB_NO_BLK,
+									 FB_BOT_BLK,
+									 FB_TOP_BLK,
+									 FB_NO_BLK,
+									 FB_NO_BLK,
+									 FB_BOT_BLK,
+									 FB_TOP_BLK,
+									 FB_TOP_BLK,
+									 FB_NO_BLK,
+									 FB_NO_BLK,
+									 FB_BOT_BLK};
+
 static uint8_t player_row;
 
 static void timers_init(void)
@@ -27,15 +43,20 @@ static void timers_init(void)
 	TIMSK0 = _BV(OCIE0A);
 }
 
-int main(void)
+void gpio_init(void)
 {
-	uint8_t old_row;
-
-	_delay_ms(2000);
 	DDRE &= ~_BV(PE2);
 	DDRE |= _BV(PE6);
 	PORTE |= _BV(PE2);
+}
 
+int main(void)
+{
+	// uint8_t old_row;
+
+	_delay_ms(2000);
+
+	gpio_init();
 	timers_init();
 
 	i2c_init();
@@ -44,14 +65,19 @@ int main(void)
 	lcd_set_cursor(player_row, 1);
 	lcd_display("@");
 
+
 	sei();
 
 	while (1) {
-		old_row = player_row;
+		// old_row = player_row;
 		handle_input(&player_row);
 
-		if (old_row != player_row) {
-			draw_player(player_row);
-		}
+		draw_frame(framebuf);
+
+		_delay_ms(1000);
+		// // draw player last
+		// if (old_row != player_row) {
+		// 	draw_player(player_row);
+		// }
 	}
 }
