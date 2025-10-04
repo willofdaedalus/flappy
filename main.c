@@ -12,22 +12,7 @@
 // 2 - block on the bottom
 // 3 - destroy blocks powerup
 // 4 - invincibility powerup
-static uint8_t framebuf[LCD_COLS] = {FB_TOP_BLK,
-									 FB_NO_BLK,
-									 FB_NO_BLK,
-									 FB_BOT_BLK,
-									 FB_NO_BLK,
-									 FB_NO_BLK,
-									 FB_BOT_BLK,
-									 FB_TOP_BLK,
-									 FB_NO_BLK,
-									 FB_NO_BLK,
-									 FB_BOT_BLK,
-									 FB_TOP_BLK,
-									 FB_TOP_BLK,
-									 FB_NO_BLK,
-									 FB_NO_BLK,
-									 FB_BOT_BLK};
+static uint8_t framebuf[LCD_COLS];
 
 static uint8_t player_row;
 
@@ -69,10 +54,13 @@ int main(void)
 	sei();
 
 	while (1) {
+		lcd_send_cmd(LCD_CMD_CLEAR);
 		// old_row = player_row;
 		handle_input(&player_row);
 
+		advance_frame(framebuf);
 		draw_frame(framebuf);
+		draw_player(player_row);
 
 		_delay_ms(1000);
 		// // draw player last

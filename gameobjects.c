@@ -2,11 +2,14 @@
 #include "main.h"
 #include <avr/interrupt.h>
 #include <avr/io.h>
+#include <stdlib.h>
 
 #define MAX_OBJ_COUNT (2)
 
 volatile uint8_t btn_state;
 volatile uint8_t btn_event;
+static uint8_t state = FB_BLANK;
+static uint8_t run_len = 1;
 // static uint8_t prev_obj;
 // track the number of objs per obj that has been spawned
 // static uint8_t tops, bottoms, blanks;
@@ -33,6 +36,15 @@ ISR(TIMER0_COMPA_vect)
 	last_raw = raw;
 }
 
+// static inline void clear_cell()
+// {
+// 	lcd_send_cmd(0x01);
+// 	// lcd_set_cursor(x, 0);
+// 	// lcd_send_data(FB_BLANK);
+// 	// lcd_set_cursor(x, 1);
+// 	// lcd_send_data(FB_BLANK);
+// }
+
 // PLAYER STUFF
 void handle_input(uint8_t *row)
 {
@@ -44,14 +56,6 @@ void handle_input(uint8_t *row)
 
 void draw_player(uint8_t row)
 {
-	// clear both rows first
-	// without this we leave a "ghost" of the previous render
-	lcd_set_cursor(0, 1);
-	lcd_display(" ");
-	lcd_set_cursor(1, 1);
-	lcd_display(" ");
-
-	// draw player
 	lcd_set_cursor(row, 1);
 	lcd_display("@");
 }
@@ -71,12 +75,17 @@ void draw_player(uint8_t row)
 // 	}
 // }
 
-static inline void clear_cell(uint8_t x)
+
+void advance_frame(uint8_t *framebuf)
 {
-	lcd_set_cursor(x, 0);
-	lcd_display(" ");
-	lcd_set_cursor(x, 1);
-	lcd_display(" ");
+	uint8_t i, c;
+
+	for (i = 0; i < LCD_COLS - 1; i++) {
+		c = framebuf[i + 1];
+		framebuf[i] = c;
+	}
+
+	framebuf[i] = gen_obj();
 }
 
 void draw_frame(uint8_t *framebuf)
@@ -86,19 +95,19 @@ void draw_frame(uint8_t *framebuf)
 	for (x = 0; x < LCD_COLS; x++) {
 		switch (framebuf[x]) {
 		case FB_TOP_BLK:
-			// clear_cell(x);
+			// clear_cell();
 			lcd_set_cursor(0, x);
 			lcd_send_data(FB_PIPE);
 			break;
 
 		case FB_NO_BLK:
-			// clear_cell(x);
+			// clear_cell();
 			lcd_set_cursor(0, x);
 			lcd_send_data(FB_BLANK);
 			break;
 
 		case FB_BOT_BLK:
-			// clear_cell(x);
+			// clear_cell();
 			lcd_set_cursor(1, x);
 			lcd_send_data(FB_PIPE);
 			break;
@@ -106,11 +115,62 @@ void draw_frame(uint8_t *framebuf)
 	}
 }
 
-// uint8_t gen_obj(void)
-// {
-// 	uint8_t cur_obj;
-//
-// 	if (prev_obj != FB_BLANK)
-//
-// 		return 0;
-// }
+uint8_t gen_obj(void)
+{
+	uint8_t cur_obj = state;
+
+	switch (state) {
+	case FB_BLANK:
+		if (run_len < 3) {
+			cur_obj = FB_BLANK;
+
+			run_len++;
+		} else {
+			if (rand() % 2 == 0) {
+				cur_obj = FB_TOP_BLK;
+				state = FB_TOP_BLK;
+			} else {
+				cur_obj = FB_BOT_BLK;
+				state = FB_BOT_BLK;
+			}
+
+			run_len = 1;
+		}
+		break;
+
+	case FB_TOP_BLK:
+		if (run_len < 2) {
+			// choice: stay top or switch early
+			if (rand() % 2 == 0) {
+				cur_obj = FB_TOP_BLK;
+				run_len++;
+			} else {
+				cur_obj = FB_BLANK;
+				state = FB_BLANK;
+			}
+		} else {
+			cur_obj = FB_BLANK;
+			state = FB_BLANK;
+			run_len = 1;
+		}
+		break;
+
+	case FB_BOT_BLK:
+		if (run_len < 2) {
+			if (rand() % 2 == 0) {
+				cur_obj = FB_BOT_BLK;
+				run_len++;
+			} else {
+				cur_obj = FB_BLANK;
+				state = FB_BLANK;
+			}
+		} else {
+			cur_obj = FB_BLANK;
+			state = FB_BLANK;
+			run_len = 1;
+		}
+		break;
+	}
+
+	return cur_obj;
+}
