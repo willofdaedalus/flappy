@@ -72,6 +72,21 @@ void advance_frame(uint8_t *framebuf)
 	framebuf[i] = gen_obj();
 }
 
+void update_score(uint8_t *framebuf, uint8_t *score)
+{
+	static uint8_t counted = 0;
+	static uint8_t blks = 0;
+
+	if (framebuf[0] != FB_BLANK && (counted == 0 || blks < 2)) {
+		(*score)++;
+		blks++;
+		counted = 1;
+	} else if (framebuf[0] == FB_BLANK) {
+		counted = 0;
+		blks = 0;
+	}
+}
+
 uint8_t check_collision(uint8_t *framebuf, uint8_t player_row)
 {
 	return (player_row == 0 && framebuf[1] == FB_TOP_BLK) ||
@@ -85,19 +100,16 @@ void draw_frame(uint8_t *framebuf)
 	for (x = 0; x < LCD_COLS; x++) {
 		switch (framebuf[x]) {
 		case FB_TOP_BLK:
-			// clear_cell();
 			lcd_set_cursor(0, x);
 			lcd_send_data(FB_PIPE);
 			break;
 
 		case FB_NO_BLK:
-			// clear_cell();
 			lcd_set_cursor(0, x);
 			lcd_send_data(FB_BLANK);
 			break;
 
 		case FB_BOT_BLK:
-			// clear_cell();
 			lcd_set_cursor(1, x);
 			lcd_send_data(FB_PIPE);
 			break;
@@ -111,7 +123,7 @@ uint8_t gen_obj(void)
 
 	switch (state) {
 	case FB_BLANK:
-		if (run_len < 3) { // Max 3 consecutive blanks
+		if (run_len < 3) {
 			cur_obj = FB_BLANK;
 			run_len++;
 		} else {

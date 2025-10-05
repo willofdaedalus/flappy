@@ -27,5 +27,6 @@ void draw_frame(uint8_t *framebuf);
 uint8_t gen_obj(void);
 void advance_frame(uint8_t *framebuf);
 uint8_t check_collision(uint8_t *framebuf, uint8_t player_row);
+void update_score(uint8_t *framebuf, uint8_t *score);
 
 #endif // _MAIN_H

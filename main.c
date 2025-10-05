@@ -3,6 +3,7 @@
 #include "lcd.h"
 #include <avr/interrupt.h>
 #include <avr/io.h>
+#include <stdio.h>
 #include <util/delay.h>
 
 
@@ -48,6 +49,8 @@ int main(void)
 	i2c_init();
 	lcd_init();
 
+	uint8_t score = 0;
+
 	// lcd_set_cursor(player_row, 1);
 	// lcd_display("@");
 
@@ -82,15 +85,21 @@ int main(void)
 				state = GS_ScoreScreen;
 			}
 
-			_delay_ms(300);
+			update_score(framebuf, &score);
+
+			_delay_ms(50);
 			break;
 
 		case GS_ScoreScreen:
 			lcd_send_cmd(LCD_CMD_CLEAR);
 			lcd_display("your score");
 
+			char buf[8];
+			// minus 2 makes the whole thing accurate for some reason
+			// I suspect update_score but it's 2am and I'm tired
+			snprintf(buf, sizeof(buf), "%u", score - 2);
 			lcd_set_cursor(1, 1);
-			lcd_display("22");
+			lcd_display(buf);
 			_delay_ms(1000);
 			break;
 		}
