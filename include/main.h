@@ -15,10 +15,17 @@
 
 #define LCD_COLS (16)
 
+enum GameState {
+	GS_TitleScreen,
+	GS_MainLoop,
+	GS_ScoreScreen,
+};
+
 void handle_input(uint8_t *row);
 void draw_player(uint8_t row);
 void draw_frame(uint8_t *framebuf);
 uint8_t gen_obj(void);
 void advance_frame(uint8_t *framebuf);
+uint8_t check_collision(uint8_t *framebuf, uint8_t player_row);
 
 #endif // _MAIN_H

@@ -60,22 +60,6 @@ void draw_player(uint8_t row)
 	lcd_display("@");
 }
 
-// PIPE STUFF
-// void draw_pipe(uint8_t pipe, uint8_t col)
-// {
-// 	switch (pipe) {
-// 	case FB_TOP_BLK:
-// 		break;
-//
-// 	case FB_NO_BLK:
-// 		break;
-//
-// 	case FB_BOT_BLK:
-// 		break;
-// 	}
-// }
-
-
 void advance_frame(uint8_t *framebuf)
 {
 	uint8_t i, c;
@@ -86,6 +70,12 @@ void advance_frame(uint8_t *framebuf)
 	}
 
 	framebuf[i] = gen_obj();
+}
+
+uint8_t check_collision(uint8_t *framebuf, uint8_t player_row)
+{
+	return (player_row == 0 && framebuf[1] == FB_TOP_BLK) ||
+		   (player_row == 1 && framebuf[1] == FB_BOT_BLK);
 }
 
 void draw_frame(uint8_t *framebuf)
@@ -121,11 +111,11 @@ uint8_t gen_obj(void)
 
 	switch (state) {
 	case FB_BLANK:
-		if (run_len < 3) {
+		if (run_len < 3) { // Max 3 consecutive blanks
 			cur_obj = FB_BLANK;
-
 			run_len++;
 		} else {
+			// Must spawn a block now
 			if (rand() % 2 == 0) {
 				cur_obj = FB_TOP_BLK;
 				state = FB_TOP_BLK;
@@ -133,22 +123,23 @@ uint8_t gen_obj(void)
 				cur_obj = FB_BOT_BLK;
 				state = FB_BOT_BLK;
 			}
-
 			run_len = 1;
 		}
 		break;
 
 	case FB_TOP_BLK:
-		if (run_len < 2) {
-			// choice: stay top or switch early
+		if (run_len < 2) { // Max 2 consecutive top blocks
+			// Choice: stay top or switch to blank
 			if (rand() % 2 == 0) {
 				cur_obj = FB_TOP_BLK;
 				run_len++;
 			} else {
 				cur_obj = FB_BLANK;
 				state = FB_BLANK;
+				run_len = 1;
 			}
 		} else {
+			// Must go to blank (can't go directly to bottom)
 			cur_obj = FB_BLANK;
 			state = FB_BLANK;
 			run_len = 1;
@@ -156,15 +147,17 @@ uint8_t gen_obj(void)
 		break;
 
 	case FB_BOT_BLK:
-		if (run_len < 2) {
+		if (run_len < 2) { // Max 2 consecutive bottom blocks
 			if (rand() % 2 == 0) {
 				cur_obj = FB_BOT_BLK;
 				run_len++;
 			} else {
 				cur_obj = FB_BLANK;
 				state = FB_BLANK;
+				run_len = 1;
 			}
 		} else {
+			// Must go to blank (can't go directly to top)
 			cur_obj = FB_BLANK;
 			state = FB_BLANK;
 			run_len = 1;

@@ -39,6 +39,7 @@ int main(void)
 {
 	// uint8_t old_row;
 
+	enum GameState state = GS_TitleScreen;
 	_delay_ms(2000);
 
 	gpio_init();
@@ -54,15 +55,45 @@ int main(void)
 	sei();
 
 	while (1) {
-		lcd_send_cmd(LCD_CMD_CLEAR);
-		// old_row = player_row;
-		handle_input(&player_row);
+		switch (state) {
+		case GS_TitleScreen:
+			lcd_set_cursor(0, 1);
+			lcd_display("dodger game");
 
-		advance_frame(framebuf);
-		draw_frame(framebuf);
-		draw_player(player_row);
+			lcd_set_cursor(1, 1);
+			lcd_display("@willofdaedalus");
+			_delay_ms(2000);
+			state = GS_MainLoop;
+			break;
 
-		_delay_ms(1000);
+		case GS_MainLoop:
+			lcd_send_cmd(LCD_CMD_CLEAR);
+			lcd_send_cmd(LCD_CURSOR_OFF);
+			// old_row = player_row;
+			handle_input(&player_row);
+
+			advance_frame(framebuf);
+			draw_frame(framebuf);
+			draw_player(player_row);
+
+			if (check_collision(framebuf, player_row)) {
+				lcd_send_cmd(LCD_CMD_CLEAR);
+				lcd_send_cmd(LCD_CMD_HOME);
+				state = GS_ScoreScreen;
+			}
+
+			_delay_ms(300);
+			break;
+
+		case GS_ScoreScreen:
+			lcd_send_cmd(LCD_CMD_CLEAR);
+			lcd_display("your score");
+
+			lcd_set_cursor(1, 1);
+			lcd_display("22");
+			_delay_ms(1000);
+			break;
+		}
 		// // draw player last
 		// if (old_row != player_row) {
 		// 	draw_player(player_row);
