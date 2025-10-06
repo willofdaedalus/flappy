@@ -31,8 +31,8 @@ static void timers_init(void)
 
 void gpio_init(void)
 {
+	// initialize button
 	DDRE &= ~_BV(PE2);
-	DDRE |= _BV(PE6);
 	PORTE |= _BV(PE2);
 }
 
@@ -40,6 +40,9 @@ int main(void)
 {
 	// uint8_t old_row;
 
+	char buf[8];
+	uint8_t is_highscore = 0;
+	uint8_t score = 0, highscore = 0, i;
 	enum GameState state = GS_TitleScreen;
 	_delay_ms(2000);
 
@@ -49,7 +52,6 @@ int main(void)
 	i2c_init();
 	lcd_init();
 
-	uint8_t score = 0;
 
 	// lcd_set_cursor(player_row, 1);
 	// lcd_display("@");
@@ -65,14 +67,13 @@ int main(void)
 
 			lcd_set_cursor(1, 1);
 			lcd_display("@willofdaedalus");
-			_delay_ms(2000);
+			_delay_ms(5000);
 			state = GS_MainLoop;
 			break;
 
 		case GS_MainLoop:
 			lcd_send_cmd(LCD_CMD_CLEAR);
 			lcd_send_cmd(LCD_CURSOR_OFF);
-			// old_row = player_row;
 			handle_input(&player_row);
 
 			advance_frame(framebuf);
@@ -92,20 +93,32 @@ int main(void)
 
 		case GS_ScoreScreen:
 			lcd_send_cmd(LCD_CMD_CLEAR);
-			lcd_display("your score");
 
-			char buf[8];
-			// minus 2 makes the whole thing accurate for some reason
-			// I suspect update_score but it's 2am and I'm tired
-			snprintf(buf, sizeof(buf), "%u", score - 2);
+			if (score > highscore || is_highscore) {
+				lcd_display("new highscore");
+				highscore = score;
+				is_highscore = 1;
+				snprintf(buf, sizeof(buf), "%u", highscore);
+			} else {
+				lcd_display("your score");
+				snprintf(buf, sizeof(buf), "%u", score);
+			}
+
 			lcd_set_cursor(1, 1);
 			lcd_display(buf);
 			_delay_ms(1000);
+
+			if (btn_down()) {
+				lcd_init();
+				score = 0;
+				player_row = 0;
+				for (i = 0; i < LCD_COLS; i++)
+					framebuf[i] = 0;
+
+				state = GS_MainLoop;
+				is_highscore = 0;
+			}
 			break;
 		}
-		// // draw player last
-		// if (old_row != player_row) {
-		// 	draw_player(player_row);
-		// }
 	}
 }

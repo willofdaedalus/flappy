@@ -36,19 +36,15 @@ ISR(TIMER0_COMPA_vect)
 	last_raw = raw;
 }
 
-// static inline void clear_cell()
-// {
-// 	lcd_send_cmd(0x01);
-// 	// lcd_set_cursor(x, 0);
-// 	// lcd_send_data(FB_BLANK);
-// 	// lcd_set_cursor(x, 1);
-// 	// lcd_send_data(FB_BLANK);
-// }
+uint8_t btn_down(void)
+{
+	return btn_event;
+}
 
 // PLAYER STUFF
 void handle_input(uint8_t *row)
 {
-	if (btn_event) {
+	if (btn_down()) {
 		*row = !(*row);
 		btn_event = 0;
 	}
@@ -75,22 +71,19 @@ void advance_frame(uint8_t *framebuf)
 void update_score(uint8_t *framebuf, uint8_t *score)
 {
 	static uint8_t counted = 0;
-	static uint8_t blks = 0;
 
-	if (framebuf[0] != FB_BLANK && (counted == 0 || blks < 2)) {
+	if (framebuf[0] != FB_BLANK && counted == 0) {
 		(*score)++;
-		blks++;
 		counted = 1;
 	} else if (framebuf[0] == FB_BLANK) {
 		counted = 0;
-		blks = 0;
 	}
 }
 
 uint8_t check_collision(uint8_t *framebuf, uint8_t player_row)
 {
 	return (player_row == 0 && framebuf[1] == FB_TOP_BLK) ||
-		   (player_row == 1 && framebuf[1] == FB_BOT_BLK);
+	       (player_row == 1 && framebuf[1] == FB_BOT_BLK);
 }
 
 void draw_frame(uint8_t *framebuf)
@@ -140,8 +133,7 @@ uint8_t gen_obj(void)
 		break;
 
 	case FB_TOP_BLK:
-		if (run_len < 2) { // Max 2 consecutive top blocks
-			// Choice: stay top or switch to blank
+		if (run_len < 2) {
 			if (rand() % 2 == 0) {
 				cur_obj = FB_TOP_BLK;
 				run_len++;
@@ -151,7 +143,7 @@ uint8_t gen_obj(void)
 				run_len = 1;
 			}
 		} else {
-			// Must go to blank (can't go directly to bottom)
+			// must go to blank (can't go directly to bottom)
 			cur_obj = FB_BLANK;
 			state = FB_BLANK;
 			run_len = 1;
@@ -159,7 +151,7 @@ uint8_t gen_obj(void)
 		break;
 
 	case FB_BOT_BLK:
-		if (run_len < 2) { // Max 2 consecutive bottom blocks
+		if (run_len < 2) {
 			if (rand() % 2 == 0) {
 				cur_obj = FB_BOT_BLK;
 				run_len++;
@@ -169,7 +161,6 @@ uint8_t gen_obj(void)
 				run_len = 1;
 			}
 		} else {
-			// Must go to blank (can't go directly to top)
 			cur_obj = FB_BLANK;
 			state = FB_BLANK;
 			run_len = 1;
