@@ -14,9 +14,9 @@
 // 3 - destroy blocks powerup
 // 4 - invincibility powerup
 static uint8_t framebuf[LCD_COLS];
-
 static uint8_t player_row;
 
+// initialize a timer that overflows every ~16ms
 static void timers_init(void)
 {
 	// 1024 prescaler
@@ -29,6 +29,7 @@ static void timers_init(void)
 	TIMSK0 = _BV(OCIE0A);
 }
 
+// initialize the button (PE2) and LED2 (PE6)
 void gpio_init(void)
 {
 	// initialize button
@@ -38,10 +39,8 @@ void gpio_init(void)
 
 int main(void)
 {
-	// uint8_t old_row;
-
 	char buf[8];
-	uint8_t is_highscore = 0;
+	uint8_t new_hiscore = 0;
 	uint8_t score = 0, highscore = 0, i;
 	enum GameState state = GS_TitleScreen;
 	_delay_ms(2000);
@@ -53,10 +52,7 @@ int main(void)
 	lcd_init();
 
 
-	// lcd_set_cursor(player_row, 1);
-	// lcd_display("@");
-
-
+	// enable I-bit for interrupts
 	sei();
 
 	while (1) {
@@ -72,7 +68,7 @@ int main(void)
 			break;
 
 		case GS_MainLoop:
-			lcd_send_cmd(LCD_CMD_CLEAR);
+			lcd_clear();
 			lcd_send_cmd(LCD_CURSOR_OFF);
 			handle_input(&player_row);
 
@@ -81,7 +77,7 @@ int main(void)
 			draw_player(player_row);
 
 			if (check_collision(framebuf, player_row)) {
-				lcd_send_cmd(LCD_CMD_CLEAR);
+				lcd_clear();
 				lcd_send_cmd(LCD_CMD_HOME);
 				state = GS_ScoreScreen;
 			}
@@ -92,12 +88,13 @@ int main(void)
 			break;
 
 		case GS_ScoreScreen:
-			lcd_send_cmd(LCD_CMD_CLEAR);
+			lcd_clear();
+			lcd_display("your score");
 
-			if (score > highscore || is_highscore) {
+			if (score > highscore || new_hiscore) {
 				lcd_display("new highscore");
 				highscore = score;
-				is_highscore = 1;
+				new_hiscore = 1;
 				snprintf(buf, sizeof(buf), "%u", highscore);
 			} else {
 				lcd_display("your score");
@@ -116,7 +113,7 @@ int main(void)
 					framebuf[i] = 0;
 
 				state = GS_MainLoop;
-				is_highscore = 0;
+				new_hiscore = 0;
 			}
 			break;
 		}

@@ -10,10 +10,8 @@ volatile uint8_t btn_state;
 volatile uint8_t btn_event;
 static uint8_t state = FB_BLANK;
 static uint8_t run_len = 1;
-// static uint8_t prev_obj;
-// track the number of objs per obj that has been spawned
-// static uint8_t tops, bottoms, blanks;
 
+// ISR to handle button debouncing
 ISR(TIMER0_COMPA_vect)
 {
 	static uint8_t counter = 0;
@@ -36,6 +34,7 @@ ISR(TIMER0_COMPA_vect)
 	last_raw = raw;
 }
 
+// checks if the button is down
 uint8_t btn_down(void)
 {
 	return btn_event;
@@ -56,6 +55,8 @@ void draw_player(uint8_t row)
 	lcd_display("@");
 }
 
+// shift the contents of framebuf to the right and generate and append a new
+// block every time
 void advance_frame(uint8_t *framebuf)
 {
 	uint8_t i, c;
@@ -68,6 +69,7 @@ void advance_frame(uint8_t *framebuf)
 	framebuf[i] = gen_obj();
 }
 
+// updates the score whenever a non blank object is at idx 0 (behind the player)
 void update_score(uint8_t *framebuf, uint8_t *score)
 {
 	static uint8_t counted = 0;
@@ -80,12 +82,18 @@ void update_score(uint8_t *framebuf, uint8_t *score)
 	}
 }
 
+// checks collisions with the player by checking the row the player is on and
+// the current block in the framebuffer
 uint8_t check_collision(uint8_t *framebuf, uint8_t player_row)
 {
 	return (player_row == 0 && framebuf[1] == FB_TOP_BLK) ||
-	       (player_row == 1 && framebuf[1] == FB_BOT_BLK);
+		   (player_row == 1 && framebuf[1] == FB_BOT_BLK);
 }
 
+// renders a frame to the screen based on the framebuffer's contents which is
+// just a list of numbers that is made sense of by this function
+// basically check each number in the framebuffer array and then render a block
+// based on that
 void draw_frame(uint8_t *framebuf)
 {
 	uint8_t x;
@@ -110,6 +118,9 @@ void draw_frame(uint8_t *framebuf)
 	}
 }
 
+// generates a new block/pipe based on a few rules
+// * a top block cannot be followed by a bottom block and vice versa
+// * we can't have a really long run of top or block blocks without a break
 uint8_t gen_obj(void)
 {
 	uint8_t cur_obj = state;
@@ -120,7 +131,6 @@ uint8_t gen_obj(void)
 			cur_obj = FB_BLANK;
 			run_len++;
 		} else {
-			// Must spawn a block now
 			if (rand() % 2 == 0) {
 				cur_obj = FB_TOP_BLK;
 				state = FB_TOP_BLK;
@@ -143,7 +153,6 @@ uint8_t gen_obj(void)
 				run_len = 1;
 			}
 		} else {
-			// must go to blank (can't go directly to bottom)
 			cur_obj = FB_BLANK;
 			state = FB_BLANK;
 			run_len = 1;
